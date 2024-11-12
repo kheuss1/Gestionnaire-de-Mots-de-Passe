@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Gestionnaire de mots de passe</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Gestionnaire de mots de passe</h1>
+
+      <!-- Section pour définir le mot de passe maître -->
+      <div id="master-password-section">
+        <input
+          type="password"
+          id="master-password"
+          placeholder="Mot de passe maître"
+        />
+        <button id="set-master-password">Définir le mot de passe maître</button>
+      </div>
+
+      <!-- Section du gestionnaire de mots de passe -->
+      <div id="manager" style="display: none">
+        <div class="add-password">
+          <input type="text" id="website" placeholder="Nom du site" />
+          <button id="generate-password">Générer un mot de passe</button>
+          <button id="save-password">Enregistrer le mot de passe</button>
+        </div>
+
+        <h2>Mots de passe enregistrés</h2>
+        <ul id="password-list"></ul>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
