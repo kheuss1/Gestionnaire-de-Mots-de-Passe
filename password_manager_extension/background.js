@@ -53,14 +53,14 @@ async function checkMasterPassword(password) {
 }
 
 // Fonction pour envoyer les données chiffrées à l'API
-async function savePasswordToAPI(userId, website, password) {
+async function savePasswordToAPI(userId, website, login, password) {
   try {
     const response = await fetch("http://localhost:3001/register-password", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ userId, website, password }),
+      body: JSON.stringify({ userId, website, login, password }),
     });
     if (!response.ok) {
       throw new Error(
@@ -121,12 +121,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === "savePassword" && masterKey) {
     chrome.storage.local.set(
-      { [message.website]: message.password },
+      { [`${message.website}-${message.login}`]: message.password }, // Utilise une clé unique pour chaque site et login
       async () => {
         const userId = await getUserId();
         const apiResponse = await savePasswordToAPI(
           userId,
           message.website,
+          message.login, // Inclut le champ login
           message.password
         );
         sendResponse(apiResponse); // Envoie la réponse de l'API ou l'erreur appropriée
@@ -138,9 +139,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getPasswords" && masterKey) {
     chrome.storage.local.get(null, (items) => {
       const passwords = {};
-      for (const [website, password] of Object.entries(items)) {
-        if (website !== "masterPasswordHash" && website !== "userId") {
-          passwords[website] = password;
+      for (const [key, password] of Object.entries(items)) {
+        if (key !== "masterPasswordHash" && key !== "userId") {
+          const [website, login] = key.split("-"); // Extrait le site et le login de la clé
+          if (!passwords[website]) passwords[website] = {};
+          passwords[website][login] = password;
         }
       }
       sendResponse(passwords || {});

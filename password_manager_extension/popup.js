@@ -45,12 +45,14 @@ document.getElementById("generate-password").addEventListener("click", () => {
 // Enregistrer un mot de passe
 document.getElementById("save-password").addEventListener("click", async () => {
   const website = document.getElementById("website").value;
+  const login = document.getElementById("login").value;
   const password = prompt("Entrez le mot de passe pour " + website);
-  if (website && password) {
+  if (website && login && password) {
     try {
       const response = await chrome.runtime.sendMessage({
         action: "savePassword",
         website,
+        login,
         password,
       });
 
@@ -77,44 +79,73 @@ document.getElementById("save-password").addEventListener("click", async () => {
 });
 
 // Charger les mots de passe
-async function loadPasswords() {
+const ITEMS_PER_PAGE = 5; // Nombre d'éléments par page
+let currentPage = 1; // Page actuelle
+
+// Fonction pour charger les mots de passe avec pagination
+async function loadPasswords(page = 1) {
   try {
     const passwords = await chrome.runtime.sendMessage({
       action: "getPasswords",
     });
     const list = document.getElementById("password-list");
     list.innerHTML = "";
+    currentPage = page;
 
-    // Vérifiez que passwords est un objet et qu'il n'est pas vide
     if (
       passwords &&
       typeof passwords === "object" &&
       Object.keys(passwords).length > 0
     ) {
-      for (const [website, password] of Object.entries(passwords)) {
-        if (website !== "userId") {
-          // Ignorez les entrées non liées aux mots de passe
+      const entries = []; // Créer une liste plate de tous les éléments de `passwords`
 
-          const listItem = document.createElement("li");
-
-          const websiteName = document.createElement("span");
-          websiteName.textContent = website;
-
-          const passwordSpan = document.createElement("span");
-          passwordSpan.textContent = "●●●●●●●●";
-          passwordSpan.className = "show-password";
-          passwordSpan.dataset.password = password;
-
-          passwordSpan.addEventListener("click", () => {
-            passwordSpan.textContent =
-              passwordSpan.textContent === "●●●●●●●●" ? password : "●●●●●●●●";
-          });
-
-          listItem.appendChild(websiteName);
-          listItem.appendChild(passwordSpan);
-          list.appendChild(listItem);
+      for (const [website, logins] of Object.entries(passwords)) {
+        for (const [login, password] of Object.entries(logins)) {
+          entries.push({ website, login, password });
         }
       }
+
+      // Calculer les pages de la pagination
+      const totalItems = entries.length;
+      const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+      const start = (currentPage - 1) * ITEMS_PER_PAGE;
+      const end = start + ITEMS_PER_PAGE;
+      const pageEntries = entries.slice(start, end);
+
+      // Afficher les éléments de la page actuelle
+      pageEntries.forEach(({ website, login, password }) => {
+        const listItem = document.createElement("li");
+
+        const websiteHeader = document.createElement("div");
+        websiteHeader.className = "password-item-header";
+        websiteHeader.textContent = `Site: ${website}`;
+
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "password-item-content";
+
+        const loginSpan = document.createElement("span");
+        loginSpan.textContent = `Login: ${login}`;
+
+        const passwordSpan = document.createElement("span");
+        passwordSpan.textContent = "●●●●●●●●";
+        passwordSpan.className = "show-password";
+        passwordSpan.dataset.password = password;
+
+        passwordSpan.addEventListener("click", () => {
+          passwordSpan.textContent =
+            passwordSpan.textContent === "●●●●●●●●" ? password : "●●●●●●●●";
+        });
+
+        contentDiv.appendChild(loginSpan);
+        contentDiv.appendChild(passwordSpan);
+
+        listItem.appendChild(websiteHeader);
+        listItem.appendChild(contentDiv);
+        list.appendChild(listItem);
+      });
+
+      // Afficher la pagination
+      renderPagination(totalPages);
     } else {
       const emptyMessage = document.createElement("li");
       emptyMessage.textContent = "Aucun mot de passe enregistré";
@@ -123,5 +154,26 @@ async function loadPasswords() {
   } catch (error) {
     console.error("Erreur lors du chargement des mots de passe :", error);
     alert("Erreur lors du chargement des mots de passe.");
+  }
+}
+
+// Fonction pour afficher les boutons de pagination
+function renderPagination(totalPages) {
+  const paginationContainer = document.getElementById("pagination");
+  paginationContainer.innerHTML = ""; // Réinitialise les boutons de pagination
+
+  for (let i = 1; i <= totalPages; i++) {
+    const pageButton = document.createElement("button");
+    pageButton.textContent = i;
+    pageButton.className = "pagination-button";
+    if (i === currentPage) {
+      pageButton.classList.add("active");
+    }
+
+    pageButton.addEventListener("click", () => {
+      loadPasswords(i);
+    });
+
+    paginationContainer.appendChild(pageButton);
   }
 }

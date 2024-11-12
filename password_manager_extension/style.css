@@ -59,20 +59,62 @@ h2 {
 #password-list {
   list-style: none;
   padding: 0;
+  margin-top: 15px;
 }
 
 #password-list li {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px;
-  margin: 5px 0;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 10px;
+  margin: 8px 0;
   background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
 
-.show-password {
+.password-item-header {
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.password-item-content {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.password-item-content span {
+  flex: 1;
+}
+
+.password-item-content .show-password {
   cursor: pointer;
-  color: #888;
+  color: #4caf50;
+  font-size: 14px;
+}
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.pagination-button {
+  padding: 5px 10px;
+  margin: 0 5px;
+  border: 1px solid #ddd;
+  background-color: #f4f4f4;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.pagination-button.active {
+  background-color: #4caf50;
+  color: #fff;
+}
+
+.pagination-button:hover {
+  background-color: #45a049;
+  color: #fff;
 }

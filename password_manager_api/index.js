@@ -21,6 +21,7 @@ mongoose
 const PasswordSchema = new mongoose.Schema({
   userId: String,
   website: String,
+  login: String,
   iv: String,
   encryptedPassword: String,
 });
@@ -81,20 +82,37 @@ function decrypt(iv, encryptedPassword) {
 // Route pour enregistrer un mot de passe
 app.post("/register-password", async (req, res) => {
   try {
-    const { userId, website, password } = req.body;
+    const { userId, website, login, password } = req.body;
+
+    if (!userId || !website || !login || !password) {
+      return res
+        .status(400)
+        .json({
+          message:
+            "Tous les champs (userId, website, login, password) sont requis.",
+        });
+    }
+
     const { iv, encryptedPassword } = encrypt(password);
 
     const passwordEntry = new Password({
       userId,
       website,
+      login,
       iv,
       encryptedPassword,
     });
     await passwordEntry.save();
+    console.log(`Mot de passe pour ${website} enregistré avec succès.`);
     res.status(201).json({ message: "Mot de passe enregistré" });
   } catch (error) {
-    console.error("Erreur lors de l'enregistrement du mot de passe :", error);
-    res.status(500).json({ message: "Erreur interne du serveur" });
+    console.error(
+      "Erreur lors de l'enregistrement du mot de passe :",
+      error.message
+    );
+    res
+      .status(500)
+      .json({ message: "Erreur interne du serveur lors de l'enregistrement." });
   }
 });
 
@@ -112,13 +130,18 @@ app.get("/get-passwords", authenticateToken, async (req, res) => {
         return {
           userId: entry.userId,
           website: entry.website,
+          login: entry.login,
           password: decryptedPassword,
         };
       } catch (error) {
-        console.error(`Erreur de déchiffrement pour ${entry.website} :`, error);
+        console.error(
+          `Erreur de déchiffrement pour ${entry.website} :`,
+          error.message
+        );
         return {
           userId: entry.userId,
           website: entry.website,
+          login: entry.login,
           password: "Erreur de déchiffrement",
         };
       }
@@ -126,8 +149,13 @@ app.get("/get-passwords", authenticateToken, async (req, res) => {
 
     res.json(decryptedPasswords);
   } catch (error) {
-    console.error("Erreur lors de la récupération des mots de passe :", error);
-    res.status(500).json({ message: "Erreur interne du serveur" });
+    console.error(
+      "Erreur lors de la récupération des mots de passe :",
+      error.message
+    );
+    res
+      .status(500)
+      .json({ message: "Erreur interne du serveur lors de la récupération." });
   }
 });
 
